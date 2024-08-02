@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Annotated
+from typing import Annotated, NamedTuple
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -23,6 +23,14 @@ T_Session = Annotated[Session, Depends(get_session)]
 T_CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
+class QueryParams(NamedTuple):
+    title: str | None = None
+    description: str | None = None
+    state: TodoState | None = None
+    offset: int | None = None
+    limit: int | None = None
+
+
 @router.post('/', response_model=TodoPublicSchema)
 def create_todo(todo: TodoSchema, session: T_Session, user: T_CurrentUser):
     db_todo = Todo(
@@ -40,27 +48,21 @@ def create_todo(todo: TodoSchema, session: T_Session, user: T_CurrentUser):
 
 
 @router.get('/', response_model=TodoList)
-def list_todos(
-    session: T_Session,
-    user: T_CurrentUser,
-    title: str | None = None,
-    description: str | None = None,
-    state: TodoState | None = None,
-    offset: int | None = None,
-    limit: int | None = None,
-):
+def list_todos(session: T_Session, user: T_CurrentUser, params: QueryParams):
     query = select(Todo).where(Todo.user_id == user.id)
 
-    if title:
-        query = query.filter(Todo.title.contains(title))
+    if params.title:
+        query = query.filter(Todo.title.contains(params.title))
 
-    if description:
-        query = query.filter(Todo.description.contains(description))
+    if params.description:
+        query = query.filter(Todo.description.contains(params.description))
 
-    if state:
-        query = query.filter(Todo.state == state)
+    if params.state:
+        query = query.filter(Todo.state == params.state)
 
-    todos = session.scalars(query.offset(offset).limit(limit)).all()
+    todos = session.scalars(
+        query.offset(params.offset).limit(params.limit)
+    ).all()
 
     return {'todos': todos}
 
