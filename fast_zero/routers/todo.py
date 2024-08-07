@@ -48,21 +48,28 @@ def create_todo(todo: TodoSchema, session: T_Session, user: T_CurrentUser):
 
 
 @router.get('/', response_model=TodoList)
-def list_todos(session: T_Session, user: T_CurrentUser, params: QueryParams):
+def list_todos(  # noqa: PLR0913
+    session: T_Session,
+    user: T_CurrentUser,
+    *,
+    title: str = None,
+    description: str = None,
+    state: TodoState = None,
+    offset: int = 0,
+    limit: int = 10,
+):
     query = select(Todo).where(Todo.user_id == user.id)
 
-    if params.title:
-        query = query.filter(Todo.title.contains(params.title))
+    if title:
+        query = query.filter(Todo.title.contains(title))
 
-    if params.description:
-        query = query.filter(Todo.description.contains(params.description))
+    if description:
+        query = query.filter(Todo.description.contains(description))
 
-    if params.state:
-        query = query.filter(Todo.state == params.state)
+    if state:
+        query = query.filter(Todo.state == state)
 
-    todos = session.scalars(
-        query.offset(params.offset).limit(params.limit)
-    ).all()
+    todos = session.scalars(query.offset(offset).limit(limit)).all()
 
     return {'todos': todos}
 

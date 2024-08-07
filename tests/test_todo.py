@@ -24,11 +24,12 @@ def test_create_todo(client, token):
     assert data.get('state') == 'draft'
     assert data.get('created_at') is not None
     assert data.get('updated_at') is not None
+
     assert datetime.datetime.strptime(
-        data.get('created_at'), '%Y-%m-%dT%H:%M:%S'
+        data.get('created_at'), '%Y-%m-%dT%H:%M:%S.%f'
     )
     assert datetime.datetime.strptime(
-        data.get('updated_at'), '%Y-%m-%dT%H:%M:%S'
+        data.get('updated_at'), '%Y-%m-%dT%H:%M:%S.%f'
     )
 
 
